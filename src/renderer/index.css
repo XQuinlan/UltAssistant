@@ -11,3 +11,9 @@ body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Subtle overlay scrollbars in the chat panel */
+.overlay-scroll::-webkit-scrollbar { height: 8px; width: 10px; }
+.overlay-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 8px; }
+.overlay-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+.overlay-scroll::-webkit-scrollbar-track { background: transparent; }

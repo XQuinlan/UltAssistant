@@ -6,6 +6,7 @@ const store = new Store({ name: 'settings' })
 
 let mainWindow
 let ghostOn = false
+let customizerWindow
 
 function createWindow() {
   const lastBounds = store.get('window.bounds')
@@ -75,6 +76,42 @@ function registerGlobalHotkey() {
   }
 }
 
+function openCustomizer(opts = {}) {
+  const hash = `customizer${opts.tab ? `?tab=${encodeURIComponent(opts.tab)}` : ''}`
+  const isDev = !app.isPackaged
+  const devURL = `http://localhost:5173/#${hash}`
+  const prodFile = path.join(__dirname, '../../dist/renderer/index.html')
+
+  if (customizerWindow && !customizerWindow.isDestroyed()) {
+    if (isDev) customizerWindow.loadURL(devURL)
+    else customizerWindow.loadFile(prodFile, { hash })
+    customizerWindow.show()
+    customizerWindow.focus()
+    return
+  }
+
+  customizerWindow = new BrowserWindow({
+    width: 1040,
+    height: 720,
+    show: false,
+    resizable: true,
+    frame: true,
+    title: 'Customizer',
+    backgroundColor: '#121212',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  })
+
+  if (isDev) customizerWindow.loadURL(devURL)
+  else customizerWindow.loadFile(prodFile, { hash })
+
+  customizerWindow.once('ready-to-show', () => customizerWindow.show())
+  customizerWindow.on('closed', () => { customizerWindow = null })
+}
+
 app.whenReady().then(() => {
   createWindow()
   registerGlobalHotkey()
@@ -97,4 +134,22 @@ ipcMain.handle('window:set-ghost', (_e, on) => {
   if (!mainWindow) return
   ghostOn = Boolean(on)
   mainWindow.setIgnoreMouseEvents(ghostOn, { forward: true })
+})
+
+ipcMain.handle('window:open-customizer', (_e, opts) => {
+  openCustomizer(opts)
+})
+
+ipcMain.handle('window:resize-to-content', (_e, height) => {
+  if (!mainWindow) return
+  const bounds = mainWindow.getBounds()
+  const target = Math.max(40, Math.round(Number(height) || 0))
+  // Resize only height; keep width as-is
+  mainWindow.setContentSize(bounds.width, target)
+})
+
+ipcMain.handle('window:reveal', () => {
+  if (!mainWindow) return
+  if (!mainWindow.isVisible()) mainWindow.showInactive()
+  mainWindow.focus()
 })
