@@ -44,12 +44,15 @@ function ToolbarButton({ onClick, label, title, active, children }) {
   )
 }
 
-function MessageBubble({ role, text, onCopy }) {
+function MessageBubble({ role, text, onCopy, ghost, opaque }) {
   const isUser = role === 'user'
+  // When chat is active (opaque), make bubbles fully opaque for readability.
+  const userBg = opaque ? 'bg-slate-700 text-slate-50' : (ghost ? 'bg-white/10 text-white/90' : 'bg-slate-700/40 text-white/90')
+  const asstBg = opaque ? 'bg-slate-800 text-slate-100' : (ghost ? 'bg-white/8 text-white/85' : 'bg-slate-800/35 text-white/85')
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} w-full`}>
       <div className={`relative max-w-[80%] rounded-xl px-3 py-2 text-[13px] leading-relaxed shadow-sm ${
-        isUser ? 'bg-white/15 text-white/90' : 'bg-black/25 text-white/85'
+        isUser ? `${userBg}` : `${asstBg}`
       }`}>
         <div className="whitespace-pre-wrap">{text}</div>
         {!isUser && (
@@ -184,7 +187,10 @@ function OverlayApp() {
       {/* Toolbar */}
       <div
         ref={headerRef}
-        className="fixed top-0 left-0 right-0 h-9 px-3 flex items-center gap-2 text-xs text-white/80 bg-black/10 backdrop-blur-md select-none"
+        className={`fixed top-0 left-0 right-0 h-9 px-3 flex items-center gap-2 text-xs text-white/80 select-none backdrop-blur-lg border-b ${
+          // Make toolbar less transparent while keeping rest of window clear
+          ghost ? 'bg-slate-900/30 border-white/10' : 'bg-slate-900/60 border-white/15'
+        }`}
         style={{ WebkitAppRegion: 'drag' }}
       >
         <span>Overlay • MVP</span>
@@ -223,7 +229,10 @@ function OverlayApp() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-              className="fixed left-0 right-0 top-9 rounded-none border-y border-white/15 bg-black/20 backdrop-blur-md overflow-hidden"
+              className={`fixed left-0 right-0 top-9 rounded-none overflow-hidden backdrop-blur-xl border-y ${
+                // Make chat sheet less transparent by default; nearly opaque when open
+                ghost ? 'border-white/10 bg-slate-900/65' : 'border-white/15 bg-slate-900/80'
+              }`}
             >
               <div ref={contentRef} className="p-3 flex flex-col gap-3">
                 {/* Messages */}
@@ -240,6 +249,8 @@ function OverlayApp() {
                         <MessageBubble
                           role={m.role}
                           text={m.text}
+                          ghost={ghost}
+                          opaque={true}
                           onCopy={() => navigator.clipboard?.writeText(m.text)}
                         />
                       </motion.div>
@@ -250,7 +261,10 @@ function OverlayApp() {
                 {/* Composer */}
                 <div className="pt-1">
                   <div className="flex items-end gap-2">
-                    <div className="flex-1 rounded-lg bg-white/8 ring-1 ring-white/10 focus-within:ring-white/25 backdrop-blur-sm transition p-2 pr-10 relative">
+                    <div className={`flex-1 rounded-lg transition p-2 pr-10 relative ring-1 backdrop-blur-sm ${
+                      // Opaque input when chat open for maximum legibility
+                      ghost ? 'bg-slate-800 ring-white/10 focus-within:ring-white/30' : 'bg-slate-800 ring-white/10 focus-within:ring-white/30'
+                    }`}>
                       <AutoGrowTextarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}

@@ -21,8 +21,9 @@ function createWindow() {
     resizable: true,
     hasShadow: false,
     backgroundColor: '#00000000',
-    vibrancy: 'sidebar', // macOS visual effect
-    visualEffectState: 'active',
+    // Remove system-wide vibrancy so only our surfaces blur via CSS.
+    // vibrancy: 'sidebar',
+    // visualEffectState: 'active',
     alwaysOnTop: true,
     webPreferences: {
       contextIsolation: true,
